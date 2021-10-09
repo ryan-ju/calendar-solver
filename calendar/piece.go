@@ -3,58 +3,75 @@ package calendar
 import (
 	"fmt"
 	"strings"
+
+	"github.com/ryan-ju/calendar-solver/util"
 )
 
-type PieceIndex int
+type PieceIndex byte
 type Orientation int
 type Piece [7]byte
 type PieceKey struct {
 	P PieceIndex
 	O Orientation
 	R bool
+	X uint8
+	Y uint8
 }
 
 const (
 	// **
 	// **
 	// *
-	P_P PieceIndex = 0
+	P_P PieceIndex = 0b00000001
 	// **
 	// **
 	// **
-	P_O PieceIndex = 1
+	P_O PieceIndex = 0b00000010
 	// **
 	// *
 	// **
-	P_C PieceIndex = 2
+	P_C PieceIndex = 0b00000100
 	// *
 	// *
 	// ***
-	P_V PieceIndex = 3
+	P_V PieceIndex = 0b00001000
 	// *
 	// *
 	// *
 	// **
-	P_L PieceIndex = 4
+	P_L PieceIndex = 0b00010000
 	// *
 	// *
 	// **
 	// *
-	P_T PieceIndex = 5
+	P_T PieceIndex = 0b00100000
 	// *
 	// **
 	//  *
 	//  *
-	P_Z PieceIndex = 6
+	P_Z PieceIndex = 0b01000000
 	// **
 	//  *
 	//  **
-	P_S PieceIndex = 7
+	P_S PieceIndex = 0b10000000
 
 	O_UP Orientation = 0
 	O_RT Orientation = 1
 	O_DW Orientation = 2
 	O_LT Orientation = 3
+)
+
+var (
+	pieceIndexes = []PieceIndex{
+		P_P,
+		P_O,
+		P_C,
+		P_V,
+		P_L,
+		P_T,
+		P_Z,
+		P_S,
+	}
 )
 
 var (
@@ -101,8 +118,8 @@ var (
 		0b01100000,
 	}
 	pieceO_RT Piece = [7]byte{
-		0b011100000,
-		0b011100000,
+		0b01110000,
+		0b01110000,
 	}
 	pieceC_UP Piece = [7]byte{
 		0b01100000,
@@ -326,6 +343,8 @@ var (
 			O: O_LT,
 			R: true,
 		}: pieceP_LT_R,
+
+		// O is symmetric, so has fewer options
 		PieceKey{
 			P: P_O,
 			O: O_UP,
@@ -336,6 +355,8 @@ var (
 			O: O_RT,
 			R: false,
 		}: pieceO_RT,
+
+		// C is symmetric, so has fewer options
 		PieceKey{
 			P: P_C,
 			O: O_UP,
@@ -356,6 +377,8 @@ var (
 			O: O_LT,
 			R: false,
 		}: pieceC_LT,
+
+		// V is symmetric, so has fewer options
 		PieceKey{
 			P: P_V,
 			O: O_UP,
@@ -376,6 +399,7 @@ var (
 			O: O_LT,
 			R: false,
 		}: pieceV_LT,
+
 		PieceKey{
 			P: P_L,
 			O: O_UP,
@@ -416,6 +440,7 @@ var (
 			O: O_LT,
 			R: true,
 		}: pieceL_LT_R,
+
 		PieceKey{
 			P: P_T,
 			O: O_UP,
@@ -456,6 +481,7 @@ var (
 			O: O_LT,
 			R: true,
 		}: pieceT_LT_R,
+
 		PieceKey{
 			P: P_Z,
 			O: O_UP,
@@ -496,6 +522,8 @@ var (
 			O: O_LT,
 			R: true,
 		}: pieceZ_LT_R,
+
+		// S is symmetric, so has fewer options
 		PieceKey{
 			P: P_S,
 			O: O_UP,
@@ -519,8 +547,17 @@ var (
 	}
 )
 
+// MustNewPiece is used for testing only.  The same as NewPiece, except this panics if NewPiece returns false.
+func MustNewPiece(pi PieceIndex, x, y uint8, oi Orientation, reflected bool) Piece {
+	p, ok := NewPiece(pi, x, y, oi, reflected)
+	if !ok {
+		util.PrintAndExit1("invalid piece, piece = %s, x,y = %d,%d, oi = %+v, reflected = %t", GetPieceChar(pi), x, y, oi, reflected)
+	}
+	return p
+}
+
 // NewPiece returns pi at (x, y) with oi and ri.  Bool indicates if the position maybe valid (note it's one-sided, i.e., if false then it's definitely in valid); if invalid, then Piece will be empty.
-func NewPiece(pi PieceIndex, x, y int, oi Orientation, reflected bool) (Piece, bool) {
+func NewPiece(pi PieceIndex, x, y uint8, oi Orientation, reflected bool) (Piece, bool) {
 	p, ok := pieceMap[PieceKey{
 		P: pi,
 		O: oi,
@@ -530,66 +567,88 @@ func NewPiece(pi PieceIndex, x, y int, oi Orientation, reflected bool) (Piece, b
 		return Piece{}, false
 	}
 
-	// Check bounding box
-	switch pi {
-	case P_L, P_T, P_Z:
-		switch oi {
-		case O_UP, O_DW:
-			if y > 3 {
-				return Piece{}, false
-			}
-		default:
-			if x > 3 {
-				return Piece{}, false
-			}
-		}
-	default:
-		switch oi {
-		case O_UP, O_DW:
-			if y > 4 {
-				return Piece{}, false
-			}
-		default:
-			if x > 4 {
-				return Piece{}, false
-			}
-		}
-	}
+	// Check bounds
+	//if x <= 2 {
+	//
+	//}
+	//switch pi {
+	//case P_L, P_T, P_Z:
+	//	switch oi {
+	//	case O_UP, O_DW:
+	//		if y > 3 {
+	//			return Piece{}, false
+	//		}
+	//	default:
+	//		if x > 3 {
+	//			return Piece{}, false
+	//		}
+	//	}
+	//default:
+	//	switch oi {
+	//	case O_UP, O_DW:
+	//		if y > 4 {
+	//			return Piece{}, false
+	//		}
+	//	default:
+	//		if x > 4 {
+	//			return Piece{}, false
+	//		}
+	//	}
+	//}
+	//
+	//switch pi {
+	//case P_V:
+	//	if x > 4 || y > 4 {
+	//		return Piece{}, false
+	//	}
+	//default:
+	//	switch oi {
+	//	case O_UP, O_DW:
+	//		if x > 5 {
+	//			return Piece{}, false
+	//		}
+	//	default:
+	//		if y > 5 {
+	//			return Piece{}, false
+	//		}
+	//	}
+	//}
 
-	switch pi {
-	case P_V:
-		if x > 4 || y > 4 {
-			return Piece{}, false
-		}
-	default:
-		switch oi {
-		case O_UP, O_DW:
-			if x > 5 {
-				return Piece{}, false
-			}
-		default:
-			if y > 5 {
-				return Piece{}, false
-			}
-		}
-	}
+	moved := p
+	//// back is used to move the piece back to (0,0), and compare if it's the same as the original.
+	//// If different, then the move is invalid.
+	//var back [7]byte
 
 	if y > 0 {
-		for i := 6 - y; i >= 0; i-- {
-			p[i+y] = p[i]
+		var back [7]byte
+		for i := int8(6 - y); i >= 0; i-- {
+			moved[i+int8(y)] = p[i]
+			back[i] = p[i]
 		}
-		for i := 0; i < y; i++ {
-			p[i] = 0
+		for i := uint8(0); i < y; i++ {
+			moved[i] = 0
+		}
+		for i := uint8(0); i < 7; i++ {
+			if p[i] != back[i] {
+				return Piece{}, false
+			}
 		}
 	}
 
 	if x > 0 {
+		before := moved
 		for i := 0; i < 7; i++ {
-			p[i] = p[i] >> x
+			moved[i] = moved[i] >> x &^ emptyBoard[i]
+			// Move back and check if the the values are equal.
+			// If not, that means moved[i] was out of bounds.
+			back := moved[i] << x
+			if before[i] != back {
+				return Piece{}, false
+			}
 		}
 	}
 
-	return p, true
+	return moved, true
 }
 
 func (p Piece) String() string {
@@ -600,4 +659,47 @@ func (p Piece) String() string {
 		bf.WriteString("\n")
 	}
 	return bf.String()
+}
+
+func GetPieceChar(pi PieceIndex) string {
+	switch pi {
+	case P_P:
+		return "p"
+	case P_O:
+		return "o"
+	case P_C:
+		return "c"
+	case P_V:
+		return "v"
+	case P_L:
+		return "l"
+	case P_T:
+		return "t"
+	case P_Z:
+		return "z"
+	case P_S:
+		return "s"
+	default:
+		return "x"
+	}
+}
+
+func GetOrientation(o Orientation) string {
+	switch o {
+	case O_UP:
+		return "up"
+	case O_RT:
+		return "right"
+	case O_DW:
+		return "down"
+	default:
+		return "left"
+	}
+}
+
+func GetReflected(r bool) string {
+	if r {
+		return "reflected"
+	}
+	return "original"
 }

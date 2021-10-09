@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/ryan-ju/calendar-solver/cmd/solve"
+
 	"github.com/ryan-ju/calendar-solver/util"
 	"github.com/spf13/cobra"
 )
@@ -38,5 +40,6 @@ func main() {
 
 	cmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "If set, no info or warn logs will be printed.  Error logs are still printed (to stderr).  Useful for scripting.")
 	cmd.PersistentFlags().BoolVar(&debug, "debug", false, "If set, then debug log will be printed.")
+	cmd.AddCommand(solve.NewCommand())
 	util.OnErrorExit1(cmd.Execute())
 }
