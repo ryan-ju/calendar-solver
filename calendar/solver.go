@@ -37,7 +37,7 @@ func (s *Solver) Solve() *Board {
 		stack.Push(nbs...)
 		counter++
 
-		if counter == 500000 {
+		if counter % 500000 == 0 {
 			util.Log(util.LevelInfo, "Tried %d times, last board = \n%s\n", counter, b.String())
 		}
 	}
