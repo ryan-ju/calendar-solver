@@ -567,57 +567,7 @@ func NewPiece(pi PieceIndex, x, y uint8, oi Orientation, reflected bool) (Piece,
 		return Piece{}, false
 	}
 
-	// Check bounds
-	//if x <= 2 {
-	//
-	//}
-	//switch pi {
-	//case P_L, P_T, P_Z:
-	//	switch oi {
-	//	case O_UP, O_DW:
-	//		if y > 3 {
-	//			return Piece{}, false
-	//		}
-	//	default:
-	//		if x > 3 {
-	//			return Piece{}, false
-	//		}
-	//	}
-	//default:
-	//	switch oi {
-	//	case O_UP, O_DW:
-	//		if y > 4 {
-	//			return Piece{}, false
-	//		}
-	//	default:
-	//		if x > 4 {
-	//			return Piece{}, false
-	//		}
-	//	}
-	//}
-	//
-	//switch pi {
-	//case P_V:
-	//	if x > 4 || y > 4 {
-	//		return Piece{}, false
-	//	}
-	//default:
-	//	switch oi {
-	//	case O_UP, O_DW:
-	//		if x > 5 {
-	//			return Piece{}, false
-	//		}
-	//	default:
-	//		if y > 5 {
-	//			return Piece{}, false
-	//		}
-	//	}
-	//}
-
 	moved := p
-	//// back is used to move the piece back to (0,0), and compare if it's the same as the original.
-	//// If different, then the move is invalid.
-	//var back [7]byte
 
 	if y > 0 {
 		var back [7]byte

@@ -2,6 +2,7 @@ package calendar
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -149,6 +150,7 @@ func (b *Board) GetUnusedPieces() []PieceIndex {
 			result = append(result, pi)
 		}
 	}
+	rand.Shuffle(len(result), func(i, j int) { result[i], result[j] = result[j], result[i] })
 	return result
 }
 

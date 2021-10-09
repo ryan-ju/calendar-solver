@@ -1,5 +1,14 @@
 package calendar
 
+import (
+	"math/rand"
+	"time"
+)
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 func GetShortIndexes(input []uint8) []ShortIndex {
 	var result []ShortIndex
 	var x uint8
