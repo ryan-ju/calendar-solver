@@ -280,3 +280,48 @@ func subtractFreeCells(source, subtract []ShortIndex) []ShortIndex {
 	}
 	return result
 }
+
+//func subtractFreeCells2(source, subtract []ShortIndex) []ShortIndex {
+//	result := make([]ShortIndex, 0, 49)
+//	subMap := map[ShortIndex]interface{}{}
+//	for _, sub := range subtract {
+//		subMap[sub] = nil
+//	}
+//	srcMap := map[ShortIndex]interface{}{}
+//	for _, src := range source {
+//		if _, ok := subMap[src]; !ok {
+//			srcMap[src] = nil
+//		}
+//	}
+//	for k := range srcMap {
+//		var isLeftFree, isRightFree, isUpFree, isDownFree bool
+//		if k.X > 0 {
+//			_, isLeftFree = srcMap[ShortIndex{
+//				X: k.X - 1,
+//				Y: k.Y,
+//			}]
+//		}
+//		if k.X < 6 {
+//			_, isRightFree = srcMap[ShortIndex{
+//				X: k.X + 1,
+//				Y: k.Y,
+//			}]
+//		}
+//		if k.Y > 0 {
+//			_, isUpFree = srcMap[ShortIndex{
+//				X: k.X,
+//				Y: k.Y - 1,
+//			}]
+//		}
+//		if k.Y < 6 {
+//			_, isDownFree = srcMap[ShortIndex{
+//				X: k.X,
+//				Y: k.Y + 1,
+//			}]
+//		}
+//		if isLeftFree || isRightFree || isUpFree || isDownFree {
+//			result = append(result, k)
+//		}
+//	}
+//	return result
+//}
