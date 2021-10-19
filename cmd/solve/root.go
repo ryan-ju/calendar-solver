@@ -2,6 +2,7 @@ package solve
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/ryan-ju/calendar-solver/calendar"
 	"github.com/ryan-ju/calendar-solver/util"
@@ -38,10 +39,14 @@ func (c *Command) run(_ *cobra.Command, args []string) {
 	})
 	util.OnErrorExit1(err, "solver error")
 
-	board := solver.Solve()
-	if board == nil {
+	boards := solver.Solve()
+	if len(boards) == 0 {
 		util.Log(util.LevelInfo, "no solution found")
 	} else {
-		util.Log(util.LevelInfo, "solution found, %s\n", board.String())
+		var sb strings.Builder
+		for _, b := range boards {
+			sb.WriteString(b.StringSimple() + "\n")
+		}
+		util.Log(util.LevelInfo, "found %d solutions \n%s\n", len(boards), sb.String())
 	}
 }

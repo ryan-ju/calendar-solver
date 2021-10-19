@@ -1,10 +1,6 @@
 package calendar
 
-import (
-	"math/rand"
-
-	"github.com/ryan-ju/calendar-solver/util"
-)
+import "github.com/ryan-ju/calendar-solver/util"
 
 type Solver struct {
 	Target Date
@@ -22,7 +18,8 @@ func NewSolver(target Date) (*Solver, error) {
 	}, nil
 }
 
-func (s *Solver) Solve() *Board {
+func (s *Solver) Solve() []*Board {
+	var solutions []*Board
 	stack := NewStack()
 	stack.Push(s.Board)
 
@@ -33,222 +30,220 @@ func (s *Solver) Solve() *Board {
 		nbs := NextBoards(*b)
 		for _, nb := range nbs {
 			if nb.IsSolved() {
-				return nb
+				solutions = append(solutions, nb)
 			}
 		}
 		stack.Push(nbs...)
 		counter++
-
-		if counter%500000 == 0 {
-			util.Log(util.LevelInfo, "Tried %d times, last board = \n%s\n", counter, b.String())
-		}
 	}
-	return nil
+	util.Log(util.LevelInfo, "searched times: %d", counter)
+	return solutions
 }
 
 func NextBoards(b Board) []*Board {
 	var result []*Board
-	unuseds := b.GetUnusedPieces()
-	if len(unuseds) > 0 {
-		for _, unused := range unuseds {
-			for _, fc := range b.FreeCells {
-				// UP is easy, as the top-left corner is none empty
-				nb := b.AddPiece(PieceKey{
-					P: unused,
-					O: O_UP,
-					X: fc.X,
-					Y: fc.Y,
-					R: false,
-				})
-				if nb != nil {
-					result = append(result, nb)
-				}
-				// RIGHT, the top-left corner may be empty for some pieces
-				nb = nil
-				switch unused {
-				case P_Z, P_S:
-					if fc.Y >= 1 {
-						nb = b.AddPiece(PieceKey{
-							P: unused,
-							O: O_RT,
-							X: fc.X,
-							Y: fc.Y - 1,
-							R: false,
-						})
-					}
-				default:
-					nb = b.AddPiece(PieceKey{
-						P: unused,
-						O: O_RT,
-						X: fc.X,
-						Y: fc.Y,
-						R: false,
-					})
-				}
-				if nb != nil {
-					result = append(result, nb)
-				}
-				// DOWN, the top-left corner may be empty for some pieces
-				nb = nil
-				switch unused {
-				case P_P, P_T:
-					if fc.Y >= 1 {
-						nb = b.AddPiece(PieceKey{
-							P: unused,
-							O: O_DW,
-							X: fc.X,
-							Y: fc.Y - 1,
-							R: false,
-						})
-					}
-				default:
-					nb = b.AddPiece(PieceKey{
-						P: unused,
-						O: O_DW,
-						X: fc.X,
-						Y: fc.Y,
-						R: false,
-					})
-				}
-				if nb != nil {
-					result = append(result, nb)
-				}
-				// LEFT, the top-left corner may be empty for some pieces
-				nb = nil
-				switch unused {
-				case P_V:
-					if fc.Y >= 2 {
-						nb = b.AddPiece(PieceKey{
-							P: unused,
-							O: O_LT,
-							X: fc.X,
-							Y: fc.Y - 2,
-							R: false,
-						})
-					}
-				case P_L, P_T, P_Z, P_S:
-					if fc.Y >= 1 {
-						nb = b.AddPiece(PieceKey{
-							P: unused,
-							O: O_LT,
-							X: fc.X,
-							Y: fc.Y - 1,
-							R: false,
-						})
-					}
-				default:
-					nb = b.AddPiece(PieceKey{
-						P: unused,
-						O: O_LT,
-						X: fc.X,
-						Y: fc.Y,
-						R: false,
-					})
-				}
-				if nb != nil {
-					result = append(result, nb)
-				}
-
-				// ===== Reflected =====
-				// UP
-				nb = nil
-				switch unused {
-				case P_V:
-					if fc.Y >= 2 {
-						nb = b.AddPiece(PieceKey{
-							P: unused,
-							O: O_UP,
-							X: fc.X,
-							Y: fc.Y - 2,
-							R: true,
-						})
-					}
-				case P_L, P_T, P_Z, P_S:
-					if fc.X >= 1 {
-						nb = b.AddPiece(PieceKey{
-							P: unused,
-							O: O_UP,
-							X: fc.X - 1,
-							Y: fc.Y,
-							R: true,
-						})
-					}
-				default:
-					nb = b.AddPiece(PieceKey{
-						P: unused,
-						O: O_UP,
-						X: fc.X,
-						Y: fc.Y,
-						R: true,
-					})
-				}
-				if nb != nil {
-					result = append(result, nb)
-				}
-				// RIGHT
-				nb = nil
-				switch unused {
-				case P_P, P_T:
-					if fc.X >= 1 {
-						nb = b.AddPiece(PieceKey{
-							P: unused,
-							O: O_RT,
-							X: fc.X - 1,
-							Y: fc.Y,
-							R: true,
-						})
-					}
-				default:
-					nb = b.AddPiece(PieceKey{
-						P: unused,
-						O: O_RT,
-						X: fc.X,
-						Y: fc.Y,
-						R: true,
-					})
-				}
-				if nb != nil {
-					result = append(result, nb)
-				}
-				// DOWN
-				nb = nil
-				switch unused {
-				case P_Z, P_S:
-					if fc.X >= 1 {
-						nb = b.AddPiece(PieceKey{
-							P: unused,
-							O: O_DW,
-							X: fc.X - 1,
-							Y: fc.Y,
-							R: true,
-						})
-					}
-				default:
-					nb = b.AddPiece(PieceKey{
-						P: unused,
-						O: O_DW,
-						X: fc.X,
-						Y: fc.Y,
-						R: true,
-					})
-				}
-				if nb != nil {
-					result = append(result, nb)
-				}
-				// LEFT
-				nb = b.AddPiece(PieceKey{
-					P: unused,
-					O: O_LT,
-					X: fc.X,
-					Y: fc.Y,
-					R: true,
-				})
-				if nb != nil {
-					result = append(result, nb)
-				}
-			}
-		}
+	for _, fc := range b.FreeCells {
+		pieceIndex := pieceIndexes[b.PieceIndex]
+		result = append(result, NextBoardsHelper(b, pieceIndex, fc)...)
 	}
-	rand.Shuffle(len(result), func(i, j int) { result[i], result[j] = result[j], result[i] })
+	return result
+}
+
+func NextBoardsHelper(b Board, pi PieceIndex, cell ShortIndex) []*Board {
+	var result []*Board
+	// UP is easy, as the top-left corner is none empty
+	nb := b.AddPiece(PieceKey{
+		P: pi,
+		O: O_UP,
+		X: cell.X,
+		Y: cell.Y,
+		R: false,
+	})
+	if nb != nil {
+		result = append(result, nb)
+	}
+	// RIGHT, the top-left corner may be empty for some pieces
+	nb = nil
+	switch pi {
+	case P_Z, P_S:
+		if cell.Y >= 1 {
+			nb = b.AddPiece(PieceKey{
+				P: pi,
+				O: O_RT,
+				X: cell.X,
+				Y: cell.Y - 1,
+				R: false,
+			})
+		}
+	default:
+		nb = b.AddPiece(PieceKey{
+			P: pi,
+			O: O_RT,
+			X: cell.X,
+			Y: cell.Y,
+			R: false,
+		})
+	}
+	if nb != nil {
+		result = append(result, nb)
+	}
+	// DOWN, the top-left corner may be empty for some pieces
+	nb = nil
+	switch pi {
+	case P_P, P_T:
+		if cell.Y >= 1 {
+			nb = b.AddPiece(PieceKey{
+				P: pi,
+				O: O_DW,
+				X: cell.X,
+				Y: cell.Y - 1,
+				R: false,
+			})
+		}
+	default:
+		nb = b.AddPiece(PieceKey{
+			P: pi,
+			O: O_DW,
+			X: cell.X,
+			Y: cell.Y,
+			R: false,
+		})
+	}
+	if nb != nil {
+		result = append(result, nb)
+	}
+	// LEFT, the top-left corner may be empty for some pieces
+	nb = nil
+	switch pi {
+	case P_V:
+		if cell.Y >= 2 {
+			nb = b.AddPiece(PieceKey{
+				P: pi,
+				O: O_LT,
+				X: cell.X,
+				Y: cell.Y - 2,
+				R: false,
+			})
+		}
+	case P_L, P_T, P_Z, P_S:
+		if cell.Y >= 1 {
+			nb = b.AddPiece(PieceKey{
+				P: pi,
+				O: O_LT,
+				X: cell.X,
+				Y: cell.Y - 1,
+				R: false,
+			})
+		}
+	default:
+		nb = b.AddPiece(PieceKey{
+			P: pi,
+			O: O_LT,
+			X: cell.X,
+			Y: cell.Y,
+			R: false,
+		})
+	}
+	if nb != nil {
+		result = append(result, nb)
+	}
+
+	// ===== Reflected =====
+	// UP
+	nb = nil
+	switch pi {
+	case P_V:
+		if cell.Y >= 2 {
+			nb = b.AddPiece(PieceKey{
+				P: pi,
+				O: O_UP,
+				X: cell.X,
+				Y: cell.Y - 2,
+				R: true,
+			})
+		}
+	case P_L, P_T, P_Z, P_S:
+		if cell.X >= 1 {
+			nb = b.AddPiece(PieceKey{
+				P: pi,
+				O: O_UP,
+				X: cell.X - 1,
+				Y: cell.Y,
+				R: true,
+			})
+		}
+	default:
+		nb = b.AddPiece(PieceKey{
+			P: pi,
+			O: O_UP,
+			X: cell.X,
+			Y: cell.Y,
+			R: true,
+		})
+	}
+	if nb != nil {
+		result = append(result, nb)
+	}
+	// RIGHT
+	nb = nil
+	switch pi {
+	case P_P, P_T:
+		if cell.X >= 1 {
+			nb = b.AddPiece(PieceKey{
+				P: pi,
+				O: O_RT,
+				X: cell.X - 1,
+				Y: cell.Y,
+				R: true,
+			})
+		}
+	default:
+		nb = b.AddPiece(PieceKey{
+			P: pi,
+			O: O_RT,
+			X: cell.X,
+			Y: cell.Y,
+			R: true,
+		})
+	}
+	if nb != nil {
+		result = append(result, nb)
+	}
+	// DOWN
+	nb = nil
+	switch pi {
+	case P_Z, P_S:
+		if cell.X >= 1 {
+			nb = b.AddPiece(PieceKey{
+				P: pi,
+				O: O_DW,
+				X: cell.X - 1,
+				Y: cell.Y,
+				R: true,
+			})
+		}
+	default:
+		nb = b.AddPiece(PieceKey{
+			P: pi,
+			O: O_DW,
+			X: cell.X,
+			Y: cell.Y,
+			R: true,
+		})
+	}
+	if nb != nil {
+		result = append(result, nb)
+	}
+	// LEFT
+	nb = b.AddPiece(PieceKey{
+		P: pi,
+		O: O_LT,
+		X: cell.X,
+		Y: cell.Y,
+		R: true,
+	})
+	if nb != nil {
+		result = append(result, nb)
+	}
 	return result
 }

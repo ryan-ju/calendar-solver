@@ -2,7 +2,6 @@ package calendar
 
 import (
 	"fmt"
-	"math/rand"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -28,9 +27,8 @@ type Board struct {
 	Date            Date
 	DateCoordinates []ShortIndex
 	// Each byte is a row, e.g., 01111111 is a full row
-	Cells [7]byte
-	// Pieces used
-	PiecesUsed byte
+	Cells      [7]byte
+	PieceIndex int
 	// Pieces and their config
 	Pieces []PieceHolder
 
@@ -95,8 +93,7 @@ func NewBoard(date Date) (*Board, error) {
 				Y: dayY,
 			},
 		},
-		PiecesUsed: 0b0,
-		FreeCells:  fc,
+		FreeCells: fc,
 	}, nil
 }
 
@@ -135,7 +132,7 @@ func (b *Board) AddPiece(pk PieceKey) *Board {
 		Date:            b.Date,
 		DateCoordinates: b.DateCoordinates,
 		Cells:           newCells,
-		PiecesUsed:      b.PiecesUsed | byte(pk.P),
+		PieceIndex:      b.PieceIndex + 1,
 		Pieces:          newPieces,
 		FreeCells:       subtractFreeCells(b.FreeCells, cellsOfPiece(p)),
 	}
@@ -143,19 +140,8 @@ func (b *Board) AddPiece(pk PieceKey) *Board {
 	return &newBoard
 }
 
-func (b *Board) GetUnusedPieces() []PieceIndex {
-	result := make([]PieceIndex, 0, 8)
-	for _, pi := range pieceIndexes {
-		if b.PiecesUsed&byte(pi) == 0 {
-			result = append(result, pi)
-		}
-	}
-	rand.Shuffle(len(result), func(i, j int) { result[i], result[j] = result[j], result[i] })
-	return result
-}
-
 func (b *Board) IsSolved() bool {
-	return b.PiecesUsed == 0b11111111
+	return b.PieceIndex == 8
 }
 
 func (b *Board) SolutionPath() string {
@@ -175,6 +161,25 @@ func (b *Board) SolutionPath() string {
 func (b Board) String() string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("Target date: %02d-%02d\n", b.Date.Month, b.Date.Day))
+	sb.WriteString(b.StringSimple())
+	// Debug
+	sb.WriteString("Board cells\n")
+	for _, bt := range b.Cells {
+		str := fmt.Sprintf("%08b", bt)
+		sb.WriteString(strings.Join(strings.Split(str, ""), " "))
+		sb.WriteString("\n")
+	}
+	sb.WriteString("Pieces:\n")
+	for _, p := range b.Pieces {
+		key := p.Key
+		sb.WriteString(fmt.Sprintf("%s, %s, %s, (%d,%d)\n", GetPieceChar(key.P), GetReflected(key.R), GetOrientation(key.O), key.X, key.Y))
+	}
+
+	return sb.String()
+}
+
+func (b Board) StringSimple() string {
+	var sb strings.Builder
 	for i := uint8(0); i < 7; i++ { // row
 		if i < 2 {
 			sb.WriteString("MM")
@@ -211,20 +216,6 @@ func (b Board) String() string {
 		}
 		sb.WriteString("|\n")
 	}
-	// Debug
-	sb.WriteString("Board cells\n")
-	for _, bt := range b.Cells {
-		str := fmt.Sprintf("%08b", bt)
-		sb.WriteString(strings.Join(strings.Split(str, ""), " "))
-		sb.WriteString("\n")
-	}
-	sb.WriteString("Pieces:\n")
-	for _, p := range b.Pieces {
-		key := p.Key
-		sb.WriteString(fmt.Sprintf("%s, %s, %s, (%d,%d)\n", GetPieceChar(key.P), GetReflected(key.R), GetOrientation(key.O), key.X, key.Y))
-	}
-	sb.WriteString(fmt.Sprintf("Pieces used: %08b\n", b.PiecesUsed))
-
 	return sb.String()
 }
 
