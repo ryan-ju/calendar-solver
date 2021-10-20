@@ -18,27 +18,6 @@ func NewSolver(month, day int) *Solver {
 	}
 }
 
-//func (s *Solver) SolveOne() *Board {
-//	stack := NewStack()
-//	stack.Push(s.Board)
-//
-//	var counter int64
-//	for !stack.IsEmpty() {
-//		b := stack.Pop()
-//
-//		nbs := NextBoards(*b)
-//		for _, nb := range nbs {
-//			if nb.IsSolved() {
-//				return nb
-//			}
-//		}
-//		stack.Push(nbs...)
-//		counter++
-//	}
-//	util.Log(util.LevelInfo, "searched times: %d", counter)
-//	return nil
-//}
-
 func (s *Solver) Solve() {
 	var solutions []string
 	stack := NewStack()
