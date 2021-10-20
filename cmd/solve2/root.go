@@ -1,10 +1,9 @@
-package solve
+package solve2
 
 import (
 	"strconv"
-	"strings"
 
-	"github.com/ryan-ju/calendar-solver/calendar"
+	"github.com/ryan-ju/calendar-solver/calendar2"
 	"github.com/ryan-ju/calendar-solver/util"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +14,7 @@ type Command struct {
 func NewCommand() *cobra.Command {
 	cmd := &Command{}
 	result := &cobra.Command{
-		Use:   "solve",
+		Use:   "solve2",
 		Short: "Solves the calendar puzzle",
 		Run:   cmd.run,
 	}
@@ -32,21 +31,6 @@ func (c *Command) run(_ *cobra.Command, args []string) {
 	day, err := strconv.Atoi(args[0][2:])
 	util.OnErrorExit1(err, "invalid day")
 	util.Log(util.LevelInfo, "solving for month = %d, day = %d", month, day)
-
-	solver, err := calendar.NewSolver(calendar.Date{
-		Month: month,
-		Day:   day,
-	})
-	util.OnErrorExit1(err, "solver error")
-
-	boards := solver.Solve()
-	if len(boards) == 0 {
-		util.Log(util.LevelInfo, "no solution found")
-	} else {
-		var sb strings.Builder
-		for _, b := range boards {
-			sb.WriteString(b.StringSimple() + "\n")
-		}
-		util.Log(util.LevelInfo, "found %d solutions \n%s\n", len(boards), sb.String())
-	}
+	solver := calendar2.NewSolver(month, day)
+	solver.Solve()
 }

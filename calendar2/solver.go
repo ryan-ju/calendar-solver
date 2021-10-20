@@ -1,270 +1,70 @@
-package calendar
+package calendar2
 
-import "github.com/ryan-ju/calendar-solver/util"
+import (
+	"strings"
+
+	"github.com/ryan-ju/calendar-solver/util"
+)
 
 type Solver struct {
-	Target Date
-	Board  *Board
+	Month int
+	Day   int
 }
 
-func NewSolver(target Date) (*Solver, error) {
-	b, err := NewBoard(target)
-	if err != nil {
-		return nil, err
-	}
+func NewSolver(month, day int) *Solver {
 	return &Solver{
-		Target: target,
-		Board:  b,
-	}, nil
+		Month: month,
+		Day:   day,
+	}
 }
 
-func (s *Solver) SolveOne() *Board {
+//func (s *Solver) SolveOne() *Board {
+//	stack := NewStack()
+//	stack.Push(s.Board)
+//
+//	var counter int64
+//	for !stack.IsEmpty() {
+//		b := stack.Pop()
+//
+//		nbs := NextBoards(*b)
+//		for _, nb := range nbs {
+//			if nb.IsSolved() {
+//				return nb
+//			}
+//		}
+//		stack.Push(nbs...)
+//		counter++
+//	}
+//	util.Log(util.LevelInfo, "searched times: %d", counter)
+//	return nil
+//}
+
+func (s *Solver) Solve() {
+	var solutions []string
 	stack := NewStack()
-	stack.Push(s.Board)
+	board := NewBoard(s.Month, s.Day)
+	stack.Push(board)
 
 	var counter int64
 	for !stack.IsEmpty() {
 		b := stack.Pop()
 
-		nbs := NextBoards(*b)
+		nbs := b.Next()
 		for _, nb := range nbs {
 			if nb.IsSolved() {
-				return nb
+				solutions = append(solutions, nb.Solution())
+			} else {
+				stack.Push(nb)
 			}
 		}
-		stack.Push(nbs...)
 		counter++
 	}
 	util.Log(util.LevelInfo, "searched times: %d", counter)
-	return nil
-}
 
-func (s *Solver) Solve() []*Board {
-	var solutions []*Board
-	stack := NewStack()
-	stack.Push(s.Board)
-
-	var counter int64
-	for !stack.IsEmpty() {
-		b := stack.Pop()
-
-		nbs := NextBoards(*b)
-		for _, nb := range nbs {
-			if nb.IsSolved() {
-				solutions = append(solutions, nb)
-			}
-		}
-		stack.Push(nbs...)
-		counter++
-	}
-	util.Log(util.LevelInfo, "searched times: %d", counter)
-	return solutions
-}
-
-func NextBoards(b Board) []*Board {
-	var result []*Board
-	for _, fc := range b.FreeCells {
-		pieceIndex := pieceIndexes[b.PieceIndex]
-		result = append(result, NextBoardsHelper(b, pieceIndex, fc)...)
-	}
-	return result
-}
-
-func NextBoardsHelper(b Board, pi PieceIndex, cell ShortIndex) []*Board {
-	var result []*Board
-	// UP is easy, as the top-left corner is none empty
-	nb := b.AddPiece(PieceKey{
-		P: pi,
-		O: O_UP,
-		X: cell.X,
-		Y: cell.Y,
-		R: false,
-	})
-	if nb != nil {
-		result = append(result, nb)
-	}
-	// RIGHT, the top-left corner may be empty for some pieces
-	nb = nil
-	switch pi {
-	case P_Z, P_S:
-		if cell.Y >= 1 {
-			nb = b.AddPiece(PieceKey{
-				P: pi,
-				O: O_RT,
-				X: cell.X,
-				Y: cell.Y - 1,
-				R: false,
-			})
-		}
-	default:
-		nb = b.AddPiece(PieceKey{
-			P: pi,
-			O: O_RT,
-			X: cell.X,
-			Y: cell.Y,
-			R: false,
-		})
-	}
-	if nb != nil {
-		result = append(result, nb)
-	}
-	// DOWN, the top-left corner may be empty for some pieces
-	nb = nil
-	switch pi {
-	case P_P, P_T:
-		if cell.Y >= 1 {
-			nb = b.AddPiece(PieceKey{
-				P: pi,
-				O: O_DW,
-				X: cell.X,
-				Y: cell.Y - 1,
-				R: false,
-			})
-		}
-	default:
-		nb = b.AddPiece(PieceKey{
-			P: pi,
-			O: O_DW,
-			X: cell.X,
-			Y: cell.Y,
-			R: false,
-		})
-	}
-	if nb != nil {
-		result = append(result, nb)
-	}
-	// LEFT, the top-left corner may be empty for some pieces
-	nb = nil
-	switch pi {
-	case P_V:
-		if cell.Y >= 2 {
-			nb = b.AddPiece(PieceKey{
-				P: pi,
-				O: O_LT,
-				X: cell.X,
-				Y: cell.Y - 2,
-				R: false,
-			})
-		}
-	case P_L, P_T, P_Z, P_S:
-		if cell.Y >= 1 {
-			nb = b.AddPiece(PieceKey{
-				P: pi,
-				O: O_LT,
-				X: cell.X,
-				Y: cell.Y - 1,
-				R: false,
-			})
-		}
-	default:
-		nb = b.AddPiece(PieceKey{
-			P: pi,
-			O: O_LT,
-			X: cell.X,
-			Y: cell.Y,
-			R: false,
-		})
-	}
-	if nb != nil {
-		result = append(result, nb)
+	if len(solutions) > 0 {
+		util.Log(util.LevelInfo, "found %d solutions, \n%s\n", len(solutions), strings.Join(solutions, ""))
+		return
 	}
 
-	// ===== Reflected =====
-	// UP
-	nb = nil
-	switch pi {
-	case P_V:
-		if cell.Y >= 2 {
-			nb = b.AddPiece(PieceKey{
-				P: pi,
-				O: O_UP,
-				X: cell.X,
-				Y: cell.Y - 2,
-				R: true,
-			})
-		}
-	case P_L, P_T, P_Z, P_S:
-		if cell.X >= 1 {
-			nb = b.AddPiece(PieceKey{
-				P: pi,
-				O: O_UP,
-				X: cell.X - 1,
-				Y: cell.Y,
-				R: true,
-			})
-		}
-	default:
-		nb = b.AddPiece(PieceKey{
-			P: pi,
-			O: O_UP,
-			X: cell.X,
-			Y: cell.Y,
-			R: true,
-		})
-	}
-	if nb != nil {
-		result = append(result, nb)
-	}
-	// RIGHT
-	nb = nil
-	switch pi {
-	case P_P, P_T:
-		if cell.X >= 1 {
-			nb = b.AddPiece(PieceKey{
-				P: pi,
-				O: O_RT,
-				X: cell.X - 1,
-				Y: cell.Y,
-				R: true,
-			})
-		}
-	default:
-		nb = b.AddPiece(PieceKey{
-			P: pi,
-			O: O_RT,
-			X: cell.X,
-			Y: cell.Y,
-			R: true,
-		})
-	}
-	if nb != nil {
-		result = append(result, nb)
-	}
-	// DOWN
-	nb = nil
-	switch pi {
-	case P_Z, P_S:
-		if cell.X >= 1 {
-			nb = b.AddPiece(PieceKey{
-				P: pi,
-				O: O_DW,
-				X: cell.X - 1,
-				Y: cell.Y,
-				R: true,
-			})
-		}
-	default:
-		nb = b.AddPiece(PieceKey{
-			P: pi,
-			O: O_DW,
-			X: cell.X,
-			Y: cell.Y,
-			R: true,
-		})
-	}
-	if nb != nil {
-		result = append(result, nb)
-	}
-	// LEFT
-	nb = b.AddPiece(PieceKey{
-		P: pi,
-		O: O_LT,
-		X: cell.X,
-		Y: cell.Y,
-		R: true,
-	})
-	if nb != nil {
-		result = append(result, nb)
-	}
-	return result
+	util.Log(util.LevelInfo, "shoot, no solution??? Must be a bug")
 }
