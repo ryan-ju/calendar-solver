@@ -1,4 +1,4 @@
-package calendar
+package calendarSlow
 
 import "github.com/ryan-ju/calendar-solver/util"
 

@@ -1,7 +1,6 @@
-package calendar2
+package calendarFast
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -28,6 +27,7 @@ type Board struct {
 	PieceIndex int
 	MaskIndex  int
 	CellIndex  int
+	PiecesUsed []int
 	board      []string
 	flat       string
 }
@@ -56,10 +56,11 @@ func NewBoard(month, day int) *Board {
 }
 
 func (b *Board) IsSolved() bool {
-	return b.PieceIndex == LenPieces
+	return b.PieceIndex == LenPieces || len(b.PiecesUsed) == LenPieces
 }
 
-func (b *Board) Next() []*Board {
+// NextSlow iterates through masks, which is slow
+func (b *Board) NextSlow() []*Board {
 	if b.PieceIndex >= LenPieces {
 		return nil
 	}
@@ -79,6 +80,10 @@ func (b *Board) Next() []*Board {
 			if row+height > LenRows {
 				// No more to look at
 				break
+			}
+
+			if col < indent {
+				continue
 			}
 
 			if col+width-indent > LenCols {
@@ -114,14 +119,88 @@ func (b *Board) Next() []*Board {
 					board:      newRows,
 					flat:       strings.Join(newRows, "\n"),
 				}
-				if b.PieceIndex == 7 {
-					fmt.Printf("new board = \n%s\nmask = \n%s\n", strings.Join(newRows, "\n"), mask.Flat)
-				}
-
 				result = append(result, nb)
 			}
 		}
 	}
+	return result
+}
+
+// NextFast iterates through board cells, which is fast
+func (b *Board) NextFast() []*Board {
+	var result []*Board
+	row := b.CellIndex / LenCols
+	col := b.CellIndex % LenCols
+	for pi := 0; pi < LenPieces; pi++ {
+		var used bool
+		for _, pu := range b.PiecesUsed {
+			if pu == pi {
+				used = true
+				break
+			}
+		}
+		if used {
+			continue
+		}
+
+		for maskIndex := PieceToMaskFirst[pi]; maskIndex < PieceToMaskFirst[pi+1]; maskIndex++ {
+			mask := Masks[maskIndex]
+			indent := MaskIndent[maskIndex]
+			height := len(mask.Raw)
+			width := len(mask.Raw[0])
+
+			if row+height > LenRows {
+				// No more to look at
+				continue
+			}
+
+			if col < indent {
+				continue
+			}
+
+			if col+width-indent > LenCols {
+				continue
+			}
+
+			newRows := make([]string, LenRows, LenRows)
+			copy(newRows, b.board)
+			valid := true
+			for x := 0; x < width && valid; x++ {
+				boardX := col + x - indent
+				for y := 0; y < height && valid; y++ {
+					boardY := row + y
+					isBoardFilled := b.board[boardY][boardX:boardX+1] != "."
+					isMaskFilled := mask.Raw[y][x:x+1] != "."
+					valid = valid && !(isBoardFilled && isMaskFilled)
+					if isMaskFilled {
+						newRows[boardY] = newRows[boardY][:boardX] + PieceToChar[MaskToPiece[maskIndex]] + newRows[boardY][boardX+1:]
+					}
+				}
+			}
+
+			if valid {
+				var cellIndex int
+				for cellIndex = b.CellIndex; cellIndex < LenCells; cellIndex++ {
+					tr := cellIndex / LenCols
+					tc := cellIndex % LenCols
+					if newRows[tr][tc:tc+1] == "." {
+						break
+					}
+				}
+
+				nb := &Board{
+					Prev:       b,
+					MaskIndex:  maskIndex,
+					CellIndex:  cellIndex,
+					PiecesUsed: append([]int{pi}, b.PiecesUsed...), // This way to avoid modifying b.PiecesUsed
+					board:      newRows,
+					flat:       strings.Join(newRows, "\n"),
+				}
+				result = append(result, nb)
+			}
+		}
+	}
+
 	return result
 }
 
@@ -132,11 +211,13 @@ func (b *Board) Solution() string {
 	}
 
 	var solution []PiecePlacement
-	for tb := b; tb != nil; tb = tb.Prev {
+	maskIndex := b.MaskIndex
+	for tb := b.Prev; tb != nil; tb = tb.Prev {
 		solution = append(solution, PiecePlacement{
-			MaskIndex: tb.MaskIndex,
+			MaskIndex: maskIndex,
 			CellIndex: tb.CellIndex,
 		})
+		maskIndex = tb.MaskIndex
 	}
 
 	var field [LenRows][LenCols]string

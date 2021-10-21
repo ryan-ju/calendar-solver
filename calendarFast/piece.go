@@ -1,4 +1,4 @@
-package calendar2
+package calendarFast
 
 import (
 	"strings"
@@ -141,7 +141,7 @@ func Rotate(p Piece) Piece {
 	var shape []string
 	for x := 0; x < nc; x++ {
 		var row []string
-		for y := 0; y < nr; y++ {
+		for y := nr - 1; y >= 0; y-- {
 			row = append(row, p.Raw[y][x:x+1])
 		}
 		shape = append(shape, strings.Join(row, ""))

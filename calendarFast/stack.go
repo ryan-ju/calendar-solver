@@ -1,4 +1,4 @@
-package calendar2
+package calendarFast
 
 type Stack struct {
 	queue []*Board

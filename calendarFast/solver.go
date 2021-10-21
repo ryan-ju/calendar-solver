@@ -1,4 +1,4 @@
-package calendar2
+package calendarFast
 
 import (
 	"strings"
@@ -28,7 +28,7 @@ func (s *Solver) Solve() {
 	for !stack.IsEmpty() {
 		b := stack.Pop()
 
-		nbs := b.Next()
+		nbs := b.NextFast()
 		for _, nb := range nbs {
 			if nb.IsSolved() {
 				solutions = append(solutions, nb.Solution())
