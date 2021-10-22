@@ -12,7 +12,7 @@ go run ./cmd solve 0524
 
 Copy [single_file.go](single_file.go) into https://goplay.space/ and run.
 
-Or visit this https://goplay.space/#pzW33xIiaUc
+Or visit this https://play.golang.org/p/sbIpoGEVIxn
 
 It prints out like this:
 ```

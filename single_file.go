@@ -1,5 +1,6 @@
 /*
-File to be copied into https://goplay.space/
+File to be copied into https://goplay.space/ or https://play.golang.org/
+Repo: https://github.com/ryan-ju/calendar-solver
 */
 
 package main
